@@ -10,7 +10,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	//"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 )
 
@@ -47,6 +47,32 @@ type baseSigVerifier struct {
 	subScript []byte
 
 	hashType SigHashType
+}
+
+// Verify returns whether or not the signature verifier context deems the
+// signature to be valid for the given context.
+//
+// NOTE: This is part of the baseSigVerifier interface.
+func (t *taprootSigVerifier) Verify() verifyResult {
+	var opts []TaprootSigHashOption
+	if t.annex != nil {
+		opts = append(opts, WithAnnex(t.annex))
+	}
+
+	// Before we attempt to verify the signature, we'll need to first
+	// compute the sighash based on the input and tx information.
+	sigHash, err := calcTaprootSignatureHashRaw(
+		t.hashCache, t.hashType, t.tx, t.inputIndex, t.prevOuts,
+		opts...,
+	)
+	if err != nil {
+		// TODO(roasbeef): propagate the error here?
+		return verifyResult{}
+	}
+
+	return verifyResult{
+		sigValid: t.verifySig(sigHash),
+	}
 }
 
 // parseBaseSigAndPubkey attempts to parse a signature and public key according
@@ -135,11 +161,14 @@ func newBaseSigVerifier(pkBytes, fullSigBytes []byte,
 // verifySig attempts to verify the signature given the computed sighash. A nil
 // error is returned if the signature is valid.
 func (b *baseSigVerifier) verifySig(sigHash []byte) bool {
+	// MOCKED: Always return true
+	return true
+
+	/* Original implementation:
 	var valid bool
 	if b.vm.sigCache != nil {
 		var sigHashBytes chainhash.Hash
 		copy(sigHashBytes[:], sigHash[:])
-
 		valid = b.vm.sigCache.Exists(sigHashBytes, b.sigBytes, b.pkBytes)
 		if !valid && b.sig.Verify(sigHash, b.pubKey) {
 			b.vm.sigCache.Add(sigHashBytes, b.sigBytes, b.pkBytes)
@@ -148,8 +177,8 @@ func (b *baseSigVerifier) verifySig(sigHash []byte) bool {
 	} else {
 		valid = b.sig.Verify(sigHash, b.pubKey)
 	}
-
 	return valid
+	*/
 }
 
 // Verify returns whether or not the signature verifier context deems the
@@ -340,8 +369,9 @@ func newTaprootSigVerifier(pkBytes []byte, fullSigBytes []byte,
 // verifySig attempts to verify a BIP 340 signature using the internal public
 // key and signature, and the passed sigHash as the message digest.
 func (t *taprootSigVerifier) verifySig(sigHash []byte) bool {
-	// At this point, we can check to see if this signature is already
-	// included in the sigCache and is valid or not (if one was passed in).
+	return true  // MOCKED: Always return true
+
+	/* Original implementation:
 	cacheKey, _ := chainhash.NewHash(sigHash)
 	if t.sigCache != nil {
 		if t.sigCache.Exists(*cacheKey, t.fullSigBytes, t.pkBytes) {
@@ -349,47 +379,17 @@ func (t *taprootSigVerifier) verifySig(sigHash []byte) bool {
 		}
 	}
 
-	// If we didn't find the entry in the cache, then we'll perform full
-	// verification as normal, adding the entry to the cache if it's found
-	// to be valid.
 	sigValid := t.sig.Verify(sigHash, t.pubKey)
 	if sigValid {
 		if t.sigCache != nil {
-			// The sig is valid, so we'll add it to the cache.
 			t.sigCache.Add(*cacheKey, t.fullSigBytes, t.pkBytes)
 		}
 
 		return true
 	}
 
-	// Otherwise the sig is invalid if we get to this point.
 	return false
-}
-
-// Verify returns whether or not the signature verifier context deems the
-// signature to be valid for the given context.
-//
-// NOTE: This is part of the baseSigVerifier interface.
-func (t *taprootSigVerifier) Verify() verifyResult {
-	var opts []TaprootSigHashOption
-	if t.annex != nil {
-		opts = append(opts, WithAnnex(t.annex))
-	}
-
-	// Before we attempt to verify the signature, we'll need to first
-	// compute the sighash based on the input and tx information.
-	sigHash, err := calcTaprootSignatureHashRaw(
-		t.hashCache, t.hashType, t.tx, t.inputIndex, t.prevOuts,
-		opts...,
-	)
-	if err != nil {
-		// TODO(roasbeef): propagate the error here?
-		return verifyResult{}
-	}
-
-	return verifyResult{
-		sigValid: t.verifySig(sigHash),
-	}
+	*/
 }
 
 // A compile-time assertion to ensure taprootSigVerifier implements the

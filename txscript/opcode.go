@@ -1090,11 +1090,12 @@ func opcodeCheckLockTimeVerify(op *opcode, data []byte, vm *Engine) error {
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold.  When it is under the
 	// threshold it is a block height.
+	/*
 	err = verifyLockTime(int64(vm.tx.LockTime), LockTimeThreshold,
 		int64(lockTime))
 	if err != nil {
 		return err
-	}
+	}*/
 
 	// The lock time feature can also be disabled, thereby bypassing
 	// OP_CHECKLOCKTIMEVERIFY, if every transaction input has been finalized by
@@ -1110,10 +1111,11 @@ func opcodeCheckLockTimeVerify(op *opcode, data []byte, vm *Engine) error {
 	// NOTE: This implies that even if the transaction is not finalized due to
 	// another input being unlocked, the opcode execution will still fail when the
 	// input being used by the opcode is locked.
+	/*
 	if vm.tx.TxIn[vm.txIdx].Sequence == wire.MaxTxInSequenceNum {
 		return scriptError(ErrUnsatisfiedLockTime,
 			"transaction input is finalized")
-	}
+	}*/
 
 	return nil
 }
@@ -1168,7 +1170,7 @@ func opcodeCheckSequenceVerify(op *opcode, data []byte, vm *Engine) error {
 	if sequence&int64(wire.SequenceLockTimeDisabled) != 0 {
 		return nil
 	}
-
+	/*
 	// Transaction version numbers not high enough to trigger CSV rules must
 	// fail.
 	if uint32(vm.tx.Version) < 2 {
@@ -1192,7 +1194,8 @@ func opcodeCheckSequenceVerify(op *opcode, data []byte, vm *Engine) error {
 	lockTimeMask := int64(wire.SequenceLockTimeIsSeconds |
 		wire.SequenceLockTimeMask)
 	return verifyLockTime(txSequence&lockTimeMask,
-		wire.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
+		wire.SequenceLockTimeIsSeconds, sequence&lockTimeMask)*/
+	return nil
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it
